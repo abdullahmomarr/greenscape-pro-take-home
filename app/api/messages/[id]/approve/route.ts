@@ -5,9 +5,10 @@ import { validateMessage } from '@/lib/guardrails';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const editedBody: string | undefined = body.editedBody;
     const editedSubject: string | undefined = body.editedSubject;
@@ -15,7 +16,7 @@ export async function POST(
     const { data: msg, error: msgErr } = await supabase
       .from('generated_messages')
       .select('*, closed_lost_leads(*)')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (msgErr) throw msgErr;
@@ -28,7 +29,6 @@ export async function POST(
     const finalSubject = editedSubject ?? msg.subject;
     const wasEdited = editedBody !== undefined && editedBody !== msg.body;
 
-    // Re-validate edited content (Marcus could paste in something bad)
     const validation = validateMessage({
       body: finalBody,
       subject: finalSubject,
@@ -58,7 +58,7 @@ export async function POST(
 
     if (sendResult.error) {
       await supabase.from('send_log').insert({
-        message_id: params.id,
+        message_id: id,
         recipient: lead.email,
         channel: 'email',
         external_id: null,
@@ -68,7 +68,7 @@ export async function POST(
       await supabase
         .from('generated_messages')
         .update({ send_error: JSON.stringify(sendResult.error) })
-        .eq('id', params.id);
+        .eq('id', id);
       return NextResponse.json({ error: 'Send failed', details: sendResult.error }, { status: 502 });
     }
 
@@ -83,12 +83,12 @@ export async function POST(
         approved_at: now,
         sent_at: now,
       })
-      .eq('id', params.id);
+      .eq('id', id);
 
     await supabase.from('closed_lost_leads').update({ status: 'sent' }).eq('id', lead.id);
 
     await supabase.from('send_log').insert({
-      message_id: params.id,
+      message_id: id,
       recipient: lead.email,
       channel: 'email',
       external_id: sendResult.data?.id ?? null,

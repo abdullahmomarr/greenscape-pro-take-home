@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function MessageDetail({ params }: { params: { id: string } }) {
+export default function MessageDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [msg, setMsg] = useState<any>(null);
   const [body, setBody] = useState('');
@@ -12,21 +13,22 @@ export default function MessageDetail({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/messages/${params.id}`)
+    fetch(`/api/messages/${id}`)
       .then((r) => r.json())
       .then((d) => {
         setMsg(d);
-        setBody(d.body);
+        setBody(d.body ?? '');
         setSubject(d.subject ?? '');
       });
-  }, [params.id]);
+  }, [id]);
 
   if (!msg) return <main className="p-6">Loading…</main>;
+  if (msg.error) return <main className="p-6 text-red-600">Error: {msg.error}</main>;
 
   async function approve() {
     setSubmitting(true);
     setError(null);
-    const res = await fetch(`/api/messages/${params.id}/approve`, {
+    const res = await fetch(`/api/messages/${id}/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ editedBody: body, editedSubject: subject }),
@@ -44,7 +46,7 @@ export default function MessageDetail({ params }: { params: { id: string } }) {
     const reason = prompt('Reason for rejection?');
     if (!reason) return;
     setSubmitting(true);
-    await fetch(`/api/messages/${params.id}/reject`, {
+    await fetch(`/api/messages/${id}/reject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason }),
@@ -94,7 +96,7 @@ export default function MessageDetail({ params }: { params: { id: string } }) {
 
       <div>
         <label className="block text-sm font-medium mb-1">
-          Message body ({msg.channel.toUpperCase()})
+          Message body ({msg.channel?.toUpperCase() ?? '?'})
         </label>
         <textarea
           value={body}
