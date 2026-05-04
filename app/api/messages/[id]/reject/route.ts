@@ -21,7 +21,7 @@ export async function POST(
   await supabase
     .from('closed_lost_leads')
     .update({ status: 'rejected' })
-    .eq('lead_id', msg.lead_id);
+    .eq('id', msg.lead_id);
 
   return NextResponse.json({ success: true });
 }
