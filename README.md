@@ -1,4 +1,4 @@
-markdown# Greenscape Pro Re-engagement Agent
+Greenscape Pro Re-engagement Agent
 
 Take-home for License & Scale. The P0 from my strategy doc — closed-lost re-engagement.
 
