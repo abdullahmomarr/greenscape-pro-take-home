@@ -2,7 +2,7 @@ markdown# Greenscape Pro Re-engagement Agent
 
 Take-home for License & Scale. The P0 from my strategy doc — closed-lost re-engagement.
 
-**Live:** https://YOUR-VERCEL-URL.vercel.app
+**Live:** https://greenscape-pro-take-home.vercel.app
 **Strategy:** [strategy.md](./strategy.md)
 
 ## What it does
